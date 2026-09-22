@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Broken Links Checker</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Broken Links Checker</h1>
+      <p class="subtitle">Crawl a site and find every broken link, page by page.</p>
+    </header>
+
+    <form id="scan-form" class="scan-form">
+      <input
+        type="url"
+        id="url-input"
+        placeholder="https://example.com"
+        required
+      />
+      <button type="submit" id="start-btn">Start Scan</button>
+      <button type="button" id="stop-btn" disabled>Stop</button>
+    </form>
+
+    <div class="options">
+      <label>
+        Max pages
+        <input type="number" id="max-pages" value="50" min="1" max="500" />
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="check-external" checked />
+        Check external links too
+      </label>
+    </div>
+
+    <section id="status" class="status hidden">
+      <div class="stat"><span id="stat-pages">0</span> pages crawled</div>
+      <div class="stat"><span id="stat-links">0</span> links checked</div>
+      <div class="stat broken"><span id="stat-broken">0</span> broken</div>
+      <div class="stat unverifiable"><span id="stat-unverifiable">0</span> unverifiable</div>
+      <div class="current" id="current-url"></div>
+    </section>
+
+    <section class="results">
+      <h2>Broken links <span id="broken-count-label"></span></h2>
+      <table id="broken-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Link</th>
+            <th>Found on</th>
+          </tr>
+        </thead>
+        <tbody id="broken-body"></tbody>
+      </table>
+      <p id="no-broken" class="empty-state hidden">No broken links found (yet).</p>
+    </section>
+
+    <section class="results">
+      <h2>Unverifiable links <span id="unverifiable-count-label"></span></h2>
+      <p class="section-hint">Got a 400/401/403/407/429/503, timed out, or hit a redirect loop — usually a WAF, rate limit, or login wall blocking automated requests, not a dead link. Not counted as broken since these often work fine in a real browser.</p>
+      <table id="unverifiable-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Link</th>
+            <th>Found on</th>
+          </tr>
+        </thead>
+        <tbody id="unverifiable-body"></tbody>
+      </table>
+      <p id="no-unverifiable" class="empty-state hidden">No unverifiable links found (yet).</p>
+    </section>
+
+    <details class="log-details">
+      <summary>Activity log</summary>
+      <div id="log" class="log"></div>
+    </details>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
