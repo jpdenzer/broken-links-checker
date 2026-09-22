@@ -138,6 +138,15 @@ button:disabled {
   min-width: 200px;
 }
 
+.export-btn {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+  padding: 8px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .results {
   margin-top: 32px;
 }
@@ -223,6 +232,11 @@ td details[open] summary::before {
 
 .pages-list div {
   padding: 2px 0 2px 8px;
+}
+
+.link-text-cell {
+  max-width: 240px;
+  color: var(--text);
 }
 
 .empty-state {

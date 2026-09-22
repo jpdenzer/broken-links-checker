@@ -21,6 +21,7 @@ const unverifiableCountLabel = document.getElementById('unverifiable-count-label
 const noUnverifiableEl = document.getElementById('no-unverifiable');
 
 const logEl = document.getElementById('log');
+const exportBtn = document.getElementById('export-btn');
 
 let eventSource = null;
 
@@ -71,6 +72,7 @@ function resetUI() {
   noBrokenEl.classList.remove('hidden');
   noUnverifiableEl.classList.remove('hidden');
   statusEl.classList.remove('hidden');
+  exportBtn.disabled = true;
 }
 
 function upsertRow({ result, groups, body, emptyStateEl, countLabelEl, badgeClass }) {
@@ -95,6 +97,9 @@ function upsertRow({ result, groups, body, emptyStateEl, countLabelEl, badgeClas
     linkA.textContent = result.url;
     linkTd.appendChild(linkA);
 
+    const textTd = document.createElement('td');
+    textTd.className = 'link-text-cell';
+
     const foundOnTd = document.createElement('td');
     const details = document.createElement('details');
     const summaryEl = document.createElement('summary');
@@ -103,11 +108,18 @@ function upsertRow({ result, groups, body, emptyStateEl, countLabelEl, badgeClas
     details.append(summaryEl, pagesListEl);
     foundOnTd.appendChild(details);
 
-    tr.append(statusTd, linkTd, foundOnTd);
+    tr.append(statusTd, linkTd, textTd, foundOnTd);
     body.appendChild(tr);
 
-    entry = { tr, pages: new Set(), summaryEl, pagesListEl };
+    entry = { tr, pages: new Set(), summaryEl, pagesListEl, textTd, text: '', result };
     groups.set(result.url, entry);
+  }
+
+  if (!entry.text && result.text) {
+    entry.text = result.text;
+    entry.textTd.textContent = result.text;
+  } else if (!entry.text) {
+    entry.textTd.textContent = '(no text)';
   }
 
   if (!entry.pages.has(result.foundOn)) {
@@ -125,6 +137,58 @@ function upsertRow({ result, groups, body, emptyStateEl, countLabelEl, badgeClas
   const n = entry.pages.size;
   entry.summaryEl.textContent = n === 1 ? '1 page' : `${n} pages`;
   updateCountLabel(groups, countLabelEl);
+  exportBtn.disabled = false;
+}
+
+function csvEscape(value) {
+  const str = String(value ?? '');
+  if (/[",\n]/.test(str)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function buildResultsCsv() {
+  const rows = [
+    ['Type', 'Status', 'Reason', 'Link', 'Link text', 'Occurrences', 'Found on pages', 'Notes'],
+  ];
+  for (const [type, groups] of [['Broken', brokenGroups], ['Unverifiable', unverifiableGroups]]) {
+    for (const [url, entry] of groups) {
+      rows.push([
+        type,
+        entry.result.status ?? entry.result.error ?? '',
+        entry.result.reason ?? entry.result.error ?? '',
+        url,
+        entry.text || '(no text)',
+        entry.pages.size,
+        Array.from(entry.pages).join(' | '),
+        '',
+      ]);
+    }
+  }
+  return rows.map((row) => row.map(csvEscape).join(',')).join('\r\n');
+}
+
+function exportResultsCsv() {
+  const csv = buildResultsCsv();
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blobUrl = URL.createObjectURL(blob);
+
+  let hostname = 'scan';
+  try {
+    hostname = new URL(urlInput.value.trim()).hostname;
+  } catch {
+    // keep default
+  }
+  const date = new Date().toISOString().slice(0, 10);
+
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = `broken-links-${hostname}-${date}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
 }
 
 function stopScan() {
@@ -234,3 +298,5 @@ stopBtn.addEventListener('click', () => {
   logLine('Scan stopped by user.');
   stopScan();
 });
+
+exportBtn.addEventListener('click', exportResultsCsv);
